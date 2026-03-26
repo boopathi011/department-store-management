@@ -1,5 +1,9 @@
-from flask import Flask, send_from_directory
 import os
+import sys
+# Ensure backend directory is in path for Vercel
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from config import Config
 from routes.auth_routes import auth_bp
