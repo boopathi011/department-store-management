@@ -14,8 +14,8 @@ const Auth = {
     },
     checkAuth: (requiredRole) => {
         const user = Auth.getUser();
-        if (!user) {
-            window.location.href = 'login.html';
+        if (!user || (user.role !== 'admin' && user.role !== 'user')) {
+            Auth.logout();
             return false;
         }
         if (requiredRole && user.role !== requiredRole) {
