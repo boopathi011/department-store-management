@@ -14,16 +14,16 @@ app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app)
 
-# Register Blueprints
-app.register_blueprint(auth_bp)
-app.register_blueprint(product_bp)
-app.register_blueprint(order_bp)
-app.register_blueprint(admin_bp)
-app.register_blueprint(loan_bp)
-app.register_blueprint(analytics_bp)
-app.register_blueprint(payment_bp)
+# Register Blueprints with /api prefix
+app.register_blueprint(auth_bp, url_prefix='/api')
+app.register_blueprint(product_bp, url_prefix='/api')
+app.register_blueprint(order_bp, url_prefix='/api')
+app.register_blueprint(admin_bp, url_prefix='/api')
+app.register_blueprint(loan_bp, url_prefix='/api')
+app.register_blueprint(analytics_bp, url_prefix='/api')
+app.register_blueprint(payment_bp, url_prefix='/api')
 
-@app.route('/uploads/<filename>')
+@app.route('/api/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(Config.UPLOAD_FOLDER, filename)
 

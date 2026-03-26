@@ -27,7 +27,7 @@ class ProductController:
                 filename = werkzeug.utils.secure_filename(f"product_{new_id}_{file.filename}")
                 filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
                 file.save(filepath)
-                image_url = f"/uploads/{filename}"
+                image_url = f"/api/uploads/{filename}"
             except Exception as e:
                 print(f"Upload failed: {str(e)}. Defaulting to URL.")
                 # On Vercel, this might fail, so we fallback to the URL if provided

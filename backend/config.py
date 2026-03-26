@@ -10,6 +10,6 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
     MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://Onlinestore:boopathi%402005@cluster0.9pnebvb.mongodb.net')
     DATABASE_NAME = 'department_store'
-    RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_placeholder')
-    RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'secret_placeholder')
+    RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_SNnWHNB76cgJxI')
+    RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'kmRCNgF1d5gQ0K3ds7xS8x7P')
     LOAN_REPAYMENT_DAYS = 4
