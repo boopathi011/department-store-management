@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders | Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Admin</h2>
+            <nav>
+                <a href="admin.html">Stats Overview</a>
+                <a href="admin_products.html">Manage Products</a>
+                <a href="admin_orders.html" style="color: var(--primary);">Store Orders</a>
+                <a href="admin_loans.html">Loan Tracker</a>
+                <a href="admin_customers.html">Customer Analytics</a>
+                <a href="admin_reports.html">Financial Reports</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 3rem;">
+                <h1>Store Orders</h1>
+                <p style="color: var(--text-muted);">View and manage all customer transactions.</p>
+            </header>
+
+            <div class="glass animate-fade" style="padding: 1rem; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 1.5rem;">User</th>
+                            <th style="padding: 1.5rem;">Product ID</th>
+                            <th style="padding: 1.5rem;">Amount</th>
+                            <th style="padding: 1.5rem;">Date</th>
+                            <th style="padding: 1.5rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-orders-rows">
+                        <!-- Orders will be injected here -->
+                        <tr>
+                            <td colspan="5" style="padding: 4rem; text-align: center; color: var(--text-muted);">
+                                Fetching all store orders...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.checkAuth('admin')) return;
+
+            const orders = await Api.get('/admin/orders');
+            const rows = document.getElementById('all-orders-rows');
+
+            if (orders && orders.length > 0) {
+                rows.innerHTML = orders.map(o => `
+                <tr style="border-bottom: 1px solid var(--glass-border);">
+                    <td style="padding: 1.5rem;">${o.user}</td>
+                    <td style="padding: 1.5rem;">#${o.product}</td>
+                    <td style="padding: 1.5rem;">₹${o.price || '...'}</td>
+                    <td style="padding: 1.5rem;">${o.date || '2026-02-19'}</td>
+                    <td style="padding: 1.5rem; display: flex; gap: 0.5rem; align-items: center;">
+                        ${o.paid 
+                            ? `<span style="padding: 4px 12px; font-size: 0.75rem; border-radius: 50px; background: rgba(34, 197, 94, 0.2); color: var(--success); font-weight: 600;">Received</span>`
+                            : `<span style="padding: 4px 12px; font-size: 0.75rem; border-radius: 50px; background: rgba(234, 179, 8, 0.2); color: var(--warning); font-weight: 600;">Pending</span>
+                               <button class="btn btn-primary" onclick="markPaid(${o.id})" style="padding: 4px 12px; font-size: 0.75rem;">Mark Received</button>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+            } else {
+                rows.innerHTML = '<tr><td colspan="5" style="padding: 4rem; text-align: center; color: var(--text-muted);">No orders found.</td></tr>';
+            }
+        });
+
+        async function markPaid(orderId) {
+            const res = await Api.post('/admin/orders/pay', { order_id: orderId });
+            if (res && res.status === "ok") {
+                UI.showToast("Order marked as received!", "success");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                UI.showToast("Failed to update status", "danger");
+            }
+        }
+    </script>
+
+</body>
+
+</html>

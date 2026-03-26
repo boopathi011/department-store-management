@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Tracker | Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Admin</h2>
+            <nav>
+                <a href="admin.html">Stats Overview</a>
+                <a href="admin_products.html">Manage Products</a>
+                <a href="admin_orders.html">Store Orders</a>
+                <a href="admin_loans.html" style="color: var(--primary);">Loan Tracker</a>
+                <a href="admin_customers.html">Customer Analytics</a>
+                <a href="admin_reports.html">Financial Reports</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 3rem;">
+                <h1>Loan Eligibility & Recovery</h1>
+                <p style="color: var(--text-muted);">Approve users for the "Buy Now Pay Later" program and track
+                    outstanding balances.</p>
+            </header>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                <div class="glass animate-fade" style="padding: 1.5rem;">
+                    <h3>Loan Recovery Tracking</h3>
+                    <div style="margin-top: 1rem; overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--glass-border);">
+                                    <th style="padding: 1rem;">Customer</th>
+                                    <th style="padding: 1rem;">Product</th>
+                                    <th style="padding: 1rem;">Amount</th>
+                                    <th style="padding: 1rem;">Due Date</th>
+                                    <th style="padding: 1rem;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loan-items-rows">
+                                <!-- Loans will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass animate-fade" style="padding: 1.5rem;">
+                    <h3>Manual Loan Entry</h3>
+                    <form id="manual-loan-form"
+                        style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                        <input type="text" id="loan-username" placeholder="Customer Username" class="glass"
+                            style="padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                        <input type="number" id="loan-product-id" placeholder="Product ID" class="glass"
+                            style="padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                        <input type="number" id="loan-deadline" placeholder="Deadline (Days)" value="4" class="glass"
+                            style="padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                        <button type="submit" class="btn btn-primary">Assign Loan</button>
+                    </form>
+                </div>
+            </div>
+
+            <header style="margin-bottom: 1.5rem;">
+                <h2>User Permissions</h2>
+            </header>
+
+            <div class="glass animate-fade" style="padding: 1rem; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 1.5rem;">User</th>
+                            <th style="padding: 1.5rem;">BNPL Status</th>
+                            <th style="padding: 1.5rem;">Total Spent</th>
+                            <th style="padding: 1.5rem;">Risk Profile</th>
+                            <th style="padding: 1.5rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loan-user-rows">
+                        <!-- Users will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        async function toggleLoan(username) {
+            const res = await Api.post('/admin/users/toggle_loan', { username });
+            if (res) {
+                UI.showToast("Eligibility updated!");
+                loadUsers();
+            }
+        }
+
+        async function sendReminder(orderId) {
+            const res = await Api.post('/admin/reminders/send', { order_id: orderId });
+            if (res) {
+                UI.showToast("Reminder sent successfully!");
+                loadLoans();
+            }
+        }
+
+        async function loadLoans() {
+            const loans = await Api.get('/admin/loans');
+            const rows = document.getElementById('loan-items-rows');
+            if (loans) {
+                rows.innerHTML = loans.map(l => {
+                    const orderDate = new Date(l.date);
+                    const deadline = l.deadline_days || 4;
+                    const dueDate = new Date(orderDate);
+                    dueDate.setDate(dueDate.getDate() + deadline);
+                    const today = new Date();
+                    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                    return `
+                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                        <td style="padding: 1rem;">@${l.user}</td>
+                        <td style="padding: 1rem;">${l.product_name}</td>
+                        <td style="padding: 1rem;">₹${l.price}</td>
+                        <td style="padding: 1rem;">
+                            <span style="color: ${diffDays < 1 ? 'var(--danger)' : 'var(--text-muted)'}">
+                                ${dueDate.toLocaleDateString()} (${diffDays}d left)
+                            </span>
+                        </td>
+                        <td style="padding: 1rem;">
+                            <button class="btn btn-outline" style="font-size: 0.7rem; padding: 0.4rem 0.8rem;" onclick="sendReminder(${l.id})">
+                                ${l.reminder_sent_at ? 'Resend Msg' : 'Send Msg'}
+                            </button>
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+        }
+
+        async function loadUsers() {
+            if (!Auth.checkAuth('admin')) return;
+
+            const users = await Api.get('/admin/users');
+            const rows = document.getElementById('loan-user-rows');
+
+            if (users) {
+                rows.innerHTML = users.filter(u => u.role === 'user').map(u => `
+                <tr style="border-bottom: 1px solid var(--glass-border);">
+                    <td style="padding: 1.5rem;">${u.name || u.username} (@${u.username})</td>
+                    <td style="padding: 1.5rem;">
+                        <span style="color: ${u.loan_eligible ? 'var(--success)' : 'var(--danger)'};">
+                            ${u.loan_eligible ? '✅ Approved' : '❌ Restricted'}
+                        </span>
+                    </td>
+                    <td style="padding: 1.5rem;">₹${u.spent || 0}</td>
+                    <td style="padding: 1.5rem;">${u.loan_eligible ? 'Low Risk' : 'Typical'}</td>
+                    <td style="padding: 1.5rem;">
+                        <button class="btn ${u.loan_eligible ? 'btn-outline' : 'btn-primary'}" 
+                                style="font-size: 0.8rem;" 
+                                onclick="toggleLoan('${u.username}')">
+                            ${u.loan_eligible ? 'Revoke BNPL' : 'Approve BNPL'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            }
+        }
+
+        document.getElementById('manual-loan-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loan-username').value;
+            const product_id = document.getElementById('loan-product-id').value;
+            const deadline_days = parseInt(document.getElementById('loan-deadline').value);
+
+            const res = await Api.post('/admin/loans', { username, product_id, deadline_days });
+            if (res) {
+                UI.showToast("Loan assigned manually!");
+                loadLoans();
+                e.target.reset();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadLoans();
+        });
+    </script>
+
+</body>
+
+</html>

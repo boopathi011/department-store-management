@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products | SRI RATHNA STORES</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+
+  <nav class="main-nav"></nav>
+
+  <header class="container animate-fade" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1 style="margin-bottom: 0.5rem;">Explore Our Products</h1>
+      <p style="color: var(--text-muted);">Quality essentials at your fingertips.</p>
+    </div>
+    <div id="admin-actions" style="display: none;">
+      <button class="btn btn-primary" onclick="toggleModal(true)">+ Add Product</button>
+    </div>
+  </header>
+
+  <!-- Add Product Modal (Shared with admin_products.html) -->
+  <div id="product-modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="glass animate-fade"
+      style="padding: 2.5rem; width: 100%; max-width: 450px; border: 1px solid var(--glass-border);">
+      <h2 id="modal-title" style="margin-bottom: 2rem; color: var(--primary);">Add New Inventory Item</h2>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Product
+          Name</label>
+        <input type="text" id="new-p-name" placeholder="e.g. Organic Avocados" class="glass"
+          style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Price
+          (INR)</label>
+        <input type="number" id="new-p-price" placeholder="450" class="glass"
+          style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label
+          style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Category</label>
+        <input type="text" id="new-p-cat" placeholder="Groceries" class="glass"
+          style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+      </div>
+      <div class="form-group" style="margin-bottom: 2rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Product
+          Image (PNG/JPG)</label>
+        <input type="file" id="new-p-img" accept="image/*" class="glass"
+          style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <button id="submit-btn" class="btn btn-primary" style="flex: 2;" onclick="submitProduct()">Add Product</button>
+        <button class="btn btn-outline" style="flex: 1;" onclick="toggleModal(false)">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div id="category-filters" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; justify-content: center;">
+      <!-- Category filters will be injected here -->
+    </div>
+    
+    <div id="list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+      <!-- Products will be injected here -->
+      <div class="glass animate-fade" style="padding: 4rem; text-align: center; grid-column: 1/-1;">
+        <div class="loader" style="margin-bottom: 1rem;">Loading awesome products...</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let editingProductId = null;
+
+    function toggleModal(show, product = null) {
+      const modal = document.getElementById('product-modal');
+      const title = document.getElementById('modal-title');
+      const btn = document.getElementById('submit-btn');
+
+      modal.style.display = show ? 'flex' : 'none';
+      editingProductId = product ? product.id : null;
+
+      if (product) {
+        title.textContent = "Update Product Details";
+        btn.textContent = "Save Changes";
+        document.getElementById('new-p-name').value = product.name;
+        document.getElementById('new-p-price').value = product.price;
+        document.getElementById('new-p-cat').value = product.category;
+      } else {
+        title.textContent = "Add New Inventory Item";
+        btn.textContent = "Add Product";
+        document.getElementById('new-p-name').value = '';
+        document.getElementById('new-p-price').value = '';
+        document.getElementById('new-p-cat').value = '';
+        document.getElementById('new-p-img').value = '';
+      }
+    }
+
+    async function submitProduct() {
+      const name = document.getElementById('new-p-name').value;
+      const price = document.getElementById('new-p-price').value;
+      const category = document.getElementById('new-p-cat').value;
+      const imageFile = document.getElementById('new-p-img').files[0];
+
+      if (!name || !price || !category) {
+        UI.showToast("Please fill required fields", "warning");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('price', price);
+      formData.append('category', category);
+      if (imageFile) formData.append('image', imageFile);
+
+      const url = editingProductId ? `/update_product/${editingProductId}` : '/add_product';
+      const res = await Api.post(url, formData);
+
+      if (res && res.status === "ok") {
+        UI.showToast(editingProductId ? "Product updated!" : "Product added successfully!");
+        toggleModal(false);
+        setTimeout(() => location.reload(), 1000);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = Auth.getUser();
+      if (user && user.role === 'admin') {
+        document.getElementById('admin-actions').style.display = 'block';
+      }
+
+      let allProducts = [];
+
+      const list = document.getElementById('list');
+      const filtersContainer = document.getElementById('category-filters');
+      
+      const reqProducts = await Api.get('/products');
+      if (reqProducts && reqProducts.length > 0) {
+          allProducts = reqProducts;
+      }
+
+      function renderProducts(productsToRender) {
+          if (productsToRender && productsToRender.length > 0) {
+            list.innerHTML = productsToRender.map(p => `
+                    <div class="glass animate-fade" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="height: 200px; overflow: hidden; border-radius: 12px; background: rgba(255,255,255,0.05);">
+                            <img src="${p.image.startsWith('/uploads') ? API_BASE_URL + p.image : p.image}" alt="${p.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); font-weight: 700;">${p.category}</span>
+                            <h3 style="margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem;">${p.name}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Premium essentials for your daily needs.</p>
+                            
+                            ${(user && user.role === 'admin') ? `
+                                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                    <button class="btn btn-primary" style="flex: 1;" onclick='toggleModal(true, ${JSON.stringify(p).replace(/'/g, "&apos;")})'>Edit Product</button>
+                                    <a href="product_detail.html?id=${p.id}" class="btn btn-outline" style="flex: 1; text-align: center;">View Details</a>
+                                </div>
+                            ` : `
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                    <button onclick="updateQty(${p.id}, -1)" class="btn-outline" style="padding: 2px 8px; font-size: 1rem; border-radius: 4px;">-</button>
+                                    <span id="qty-${p.id}" style="font-weight: 600; min-width: 20px; text-align: center;">1</span>
+                                    <button onclick="updateQty(${p.id}, 1)" class="btn-outline" style="padding: 2px 8px; font-size: 1rem; border-radius: 4px;">+</button>
+                                    <span style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-left: auto;">₹${p.price}</span>
+                                </div>
+
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-primary" onclick="placeOrder(${p.id})" style="flex: 1;">🛒 Order Now</button>
+                                    <a href="product_detail.html?id=${p.id}" class="btn btn-outline" style="padding: 10px;">Details</a>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `).join('');
+          } else {
+            list.innerHTML = '<div class="glass" style="padding: 4rem; text-align: center; grid-column: 1/-1;">No products found in this category.</div>';
+          }
+      }
+
+      function renderFilters() {
+          const categories = ["All", ...new Set(allProducts.map(p => p.category))];
+          
+          filtersContainer.innerHTML = categories.map(cat => `
+              <button class="btn ${cat === 'All' ? 'btn-primary' : 'btn-outline'}" 
+                      onclick="filterCategory('${cat}', this)"
+                      style="border-radius: 50px; padding: 0.5rem 1.5rem;">
+                  ${cat}
+              </button>
+          `).join('');
+      }
+
+      window.filterCategory = (category, btnElement) => {
+          // Update active button styling
+          Array.from(filtersContainer.children).forEach(btn => {
+              btn.classList.remove('btn-primary');
+              btn.classList.add('btn-outline');
+          });
+          btnElement.classList.remove('btn-outline');
+          btnElement.classList.add('btn-primary');
+
+          // Filter and render
+          if (category === 'All') {
+              renderProducts(allProducts);
+          } else {
+              renderProducts(allProducts.filter(p => p.category === category));
+          }
+      };
+
+      // Initial render
+      renderFilters();
+      renderProducts(allProducts);
+    });
+
+    function updateQty(id, delta) {
+      const el = document.getElementById(`qty-${id}`);
+      let qty = parseInt(el.textContent);
+      qty = Math.max(1, qty + delta);
+      el.textContent = qty;
+    }
+
+    async function placeOrder(id) {
+      const user = Auth.getUser();
+      if (!user) {
+        UI.showToast("Please login to order", "warning");
+        setTimeout(() => location.href = 'login.html', 1500);
+        return;
+      }
+
+      const qty = parseInt(document.getElementById(`qty-${id}`).textContent);
+
+      const res = await Api.post('/order', { user: user.username, product: id, quantity: qty });
+      if (res && res.status === "ok") {
+        UI.showToast(`Ordered ${qty} item(s)!`);
+      } else {
+        UI.showToast(res?.message || "Order failed", "danger");
+      }
+    }
+  </script>
+
+</body>
+
+</html>

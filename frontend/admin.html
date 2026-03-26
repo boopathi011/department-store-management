@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | SRI RATHNA STORES</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Admin</h2>
+            <nav>
+                <a href="admin.html" style="color: var(--primary);">Stats Overview</a>
+                <a href="admin_products.html">Manage Products</a>
+                <a href="admin_orders.html">Store Orders</a>
+                <a href="admin_loans.html">Loan Tracker</a>
+                <a href="admin_customers.html">Customer Analytics</a>
+                <a href="admin_reports.html">Financial Reports</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="text-align: left; padding: 0; margin-bottom: 3rem;">
+                <h1>Shop Overview</h1>
+                <p style="color: var(--text-muted);">Monitor your store operations and credit risk.</p>
+            </header>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+                
+                <div class="glass" style="padding: 1.5rem; text-align: center; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Sales Volume <span id="sales-date-context" style="font-size: 0.7rem; opacity: 0.7;"></span></span>
+                        <span id="sales-growth-context" style="font-size: 0.75rem; font-weight: 600;"></span>
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 2rem;">
+                        <button class="btn btn-outline sales-btn" data-period="daily" style="padding: 4px 12px; font-size: 0.75rem;">Daily</button>
+                        <button class="btn btn-outline sales-btn" data-period="monthly" style="padding: 4px 12px; font-size: 0.75rem;">Monthly</button>
+                        <button class="btn btn-outline sales-btn" data-period="yearly" style="padding: 4px 12px; font-size: 0.75rem;">Yearly</button>
+                        <button class="btn btn-outline sales-btn" data-period="total" style="padding: 4px 12px; font-size: 0.75rem;">Total</button>
+                    </div>
+
+                    <h3 id="stat-dynamic-sales" style="font-size: 2.2rem; margin-top: 1rem; color: var(--success); transition: all 0.3s ease;">₹ ***</h3>
+                </div>
+
+                <div class="glass" style="padding: 1.5rem; text-align: center;">
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">Active Loans</span>
+                    <h3 id="stat-loans" style="font-size: 2rem; margin-top: 0.5rem; color: var(--warning);">0</h3>
+                </div>
+                <div class="glass" style="padding: 1.5rem; text-align: center;">
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">Pending Recovery</span>
+                    <h3 id="stat-recovery" style="font-size: 2rem; margin-top: 0.5rem; color: var(--danger);">₹0</h3>
+                </div>
+                <div class="glass" style="padding: 1.5rem; text-align: center;">
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">Total Products</span>
+                    <h3 id="product-count" style="font-size: 2rem; margin-top: 0.5rem;">0</h3>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="glass" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">Recent Activity</h3>
+                    <div id="admin-recent-orders" style="display: flex; flex-direction: column; gap: 1.1rem; max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+                        <p style="color: var(--text-muted);">Fetching store activity...</p>
+                    </div>
+                </div>
+                <div class="glass" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">Market Trends</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">Top selling category today:</p>
+                    <div class="glass" style="padding: 1rem; border-left: 4px solid var(--primary);">
+                        <h4 style="color: var(--primary);">Groceries</h4>
+                        <p style="font-size: 0.8rem;">+12% spike in demand</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.checkAuth('admin')) return;
+
+            // Load General Products Count
+            const products = await Api.get('/products');
+            if (products) document.getElementById('product-count').textContent = products.length;
+
+            // Load Real-time Stats
+            const stats = await Api.get('/admin/stats');
+            if (stats) {
+                // Store stats on the element or locally
+                const dynamicSalesEl = document.getElementById('stat-dynamic-sales');
+                const salesDateContext = document.getElementById('sales-date-context');
+                const salesGrowthContext = document.getElementById('sales-growth-context');
+                const salesBtns = document.querySelectorAll('.sales-btn');
+                
+                // Handle button clicks
+                salesBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        // Update active styling
+                        salesBtns.forEach(b => {
+                            b.classList.remove('btn-primary');
+                            b.classList.add('btn-outline');
+                        });
+                        e.target.classList.remove('btn-outline');
+                        e.target.classList.add('btn-primary');
+                        
+                        // Pick the correct amount
+                        const period = e.target.getAttribute('data-period');
+                        let amount = 0;
+                        let context = "";
+                        let growthText = "";
+                        let growthColor = "";
+                        
+                        if (period === 'daily') {
+                            amount = stats.daily_sales;
+                            context = `(${stats.server_date})`;
+                            
+                            // Calculate daily growth vs yesterday
+                            const prev = stats.yesterday_sales || 0;
+                            const pct = prev === 0 ? (amount > 0 ? 100 : 0) : ((amount - prev) / prev * 100);
+                            growthText = `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%`;
+                            growthColor = pct >= 0 ? 'var(--success)' : 'var(--danger)';
+                        }
+                        else if (period === 'monthly') {
+                            amount = stats.monthly_sales;
+                            context = `(This Month)`;
+                        }
+                        else if (period === 'yearly') {
+                            amount = stats.yearly_sales;
+                            context = `(This Year)`;
+                        }
+                        else if (period === 'total') {
+                            amount = stats.total_sales;
+                            context = `(All Time)`;
+                        }
+                        
+                        // Simple animation effect on text change
+                        dynamicSalesEl.style.opacity = 0;
+                        salesDateContext.style.opacity = 0;
+                        salesGrowthContext.style.opacity = 0;
+                        setTimeout(() => {
+                            dynamicSalesEl.textContent = `₹${amount.toLocaleString()}`;
+                            salesDateContext.textContent = context;
+                            salesGrowthContext.textContent = growthText;
+                            salesGrowthContext.style.color = growthColor;
+                            
+                            dynamicSalesEl.style.opacity = 1;
+                            salesDateContext.style.opacity = 0.7;
+                            salesGrowthContext.style.opacity = 1;
+                        }, 150);
+                    });
+                });
+
+                document.getElementById('stat-loans').textContent = stats.active_loans;
+                document.getElementById('stat-recovery').textContent = `₹${stats.pending_recovery.toLocaleString()}`;
+
+                const list = document.getElementById('admin-recent-orders');
+                if (stats.recent_activity && stats.recent_activity.length > 0) {
+                    list.innerHTML = stats.recent_activity.slice().reverse().map(o => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 0.75rem 0; border-bottom: 1px solid var(--glass-border);">
+                            <div style="flex: 1;">
+                                <div style="margin-bottom: 0.25rem; font-weight: 500;">${o.username || o.user} <span style="opacity: 0.6; font-size: 0.8rem;">placed #${o.product}</span></div>
+                                <span style="font-weight: 700; color: var(--success); font-size: 1rem;">₹${(o.price || 0).toLocaleString()}</span>
+                                <div style="font-size: 0.75rem; opacity: 0.5;">${o.date || ''}</div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                ${o.paid 
+                                    ? `<span style="padding: 4px 12px; font-size: 0.7rem; border-radius: 50px; background: rgba(34, 197, 94, 0.15); color: var(--success); font-weight: 600; border: 1px solid rgba(34, 197, 94, 0.2);">Received</span>`
+                                    : `<span style="padding: 4px 12px; font-size: 0.7rem; border-radius: 50px; background: rgba(234, 179, 8, 0.15); color: var(--warning); font-weight: 600; border: 1px solid rgba(234, 179, 8, 0.2);">Pending</span>
+                                       <button class="btn btn-primary" onclick="markPaid(${o.id})" style="padding: 4px 12px; font-size: 0.7rem; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">Mark Received</button>`
+                                }
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<p style="color: var(--text-muted);">No recent orders.</p>';
+                }
+            }
+        });
+
+        async function markPaid(orderId) {
+            const res = await Api.post('/admin/orders/pay', { order_id: orderId });
+            if (res && res.status === "ok") {
+                UI.showToast("Order marked as received!", "success");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                UI.showToast("Failed to update status", "danger");
+            }
+        }
+    </script>
+
+</body>
+
+</html>

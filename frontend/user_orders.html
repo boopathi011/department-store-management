@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | SRI RATHNA STORES</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Dashboard</h2>
+            <nav>
+                <a href="user.html">Overview</a>
+                <a href="user_orders.html" style="color: var(--primary);">My Orders</a>
+                <a href="user_due.html">Pending Dues</a>
+                <a href="products.html">Continue Shopping</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="text-align: left; padding: 0; margin-bottom: 3rem;">
+                <h1>My Orders</h1>
+                <p style="color: var(--text-muted);">Track your recent purchases and credit history.</p>
+            </header>
+
+            <div id="order-list">
+                <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    Fetching your orders...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.checkAuth('user')) return;
+
+            const user = Auth.getUser();
+            const orderList = document.getElementById('order-list');
+
+            // Using /user/orders which is already filtered for the current user in the backend
+            const orders = await Api.get('/user/orders');
+
+            if (orders && orders.length > 0) {
+                // Group by date
+                const groups = orders.reduce((acc, o) => {
+                    const date = o.date || 'Unknown Date';
+                    if (!acc[date]) acc[date] = [];
+                    acc[date].push(o);
+                    return acc;
+                }, {});
+
+                orderList.innerHTML = Object.keys(groups).sort().reverse().map(date => {
+                    const dayOrders = groups[date];
+                    const hasPaid = dayOrders.some(o => o.paid);
+                    const groupTotalPaid = dayOrders.filter(o => o.paid).reduce((sum, o) => sum + (o.price || 0), 0);
+
+                    return `
+                    <div class="glass animate-fade" style="margin-bottom: 2rem; padding: 0; overflow: hidden;">
+                        <div style="padding: 1.5rem; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border);">
+                            <div>
+                                <h3 style="margin: 0;">${date}</h3>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">${dayOrders.length} item(s) • Total Paid: ₹${groupTotalPaid}</span>
+                            </div>
+                            ${hasPaid ? `
+                                <button class="btn btn-primary" style="padding: 8px 20px; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);" onclick="downloadInvoice('${date}', ${JSON.stringify(dayOrders).replace(/"/g, '&quot;')})">
+                                    📄 Download Tax Invoice
+                                </button>
+                            ` : `
+                                <span style="font-size: 0.8rem; color: var(--warning); font-weight: 600; background: rgba(234, 179, 8, 0.1); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(234, 179, 8, 0.2);">
+                                    Inv. Pending (Payment Required)
+                                </span>
+                            `}
+                        </div>
+                        <div style="padding: 1rem;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted); font-size: 0.85rem;">
+                                        <th style="padding: 1rem;">Item</th>
+                                        <th style="padding: 1rem;">Qty</th>
+                                        <th style="padding: 1rem; text-align: right;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${dayOrders.map(o => `
+                                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                                            <td style="padding: 1rem;">${o.product_name}</td>
+                                            <td style="padding: 1rem;">${o.quantity || 1}</td>
+                                            <td style="padding: 1rem; text-align: right;">₹${o.price}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            } else {
+                orderList.innerHTML = `
+                    <div style="text-align: center; padding: 5rem;" class="glass">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+                        <h3>No orders yet</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 2rem;">Start shopping to see your purchase history here.</p>
+                        <a href="products.html" class="btn btn-primary">Browse Products</a>
+                    </div>
+                `;
+            }
+        });
+
+        function downloadInvoice(date, items) {
+            UI.generateReceipt(date, items);
+        }
+    </script>
+
+</body>
+
+</html>

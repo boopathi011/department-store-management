@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Overview | SRI RATHNA STORES</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Dashboard</h2>
+            <nav>
+                <a href="user.html" style="color: var(--primary);">Overview</a>
+                <a href="user_orders.html">My Orders</a>
+                <a href="user_due.html">Pending Dues</a>
+                <a href="products.html">Continue Shopping</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="text-align: left; padding: 0; margin-bottom: 3rem;">
+                <h1 id="welcome-msg">Welcome, User</h1>
+                <p style="color: var(--text-muted);">Here's what's happening with your account today.</p>
+            </header>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+                <div class="glass" style="padding: 2rem; border-left: 4px solid var(--primary);">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Total Balance Due</span>
+                    <h2 id="due-total" style="font-size: 2.5rem; margin-top: 0.5rem;">₹0</h2>
+                </div>
+                <div class="glass" style="padding: 2rem; border-left: 4px solid var(--success);">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Active Orders</span>
+                    <h2 id="order-count" style="font-size: 2.5rem; margin-top: 0.5rem;">0</h2>
+                </div>
+                <div class="glass" style="padding: 2rem; border-left: 4px solid var(--warning);">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">BNPL Access</span>
+                    <h2 id="bnpl-status" style="font-size: 2.5rem; margin-top: 0.5rem;">Checking...</h2>
+                </div>
+            </div>
+
+            <section class="glass animate-fade" style="padding: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h3 style="margin: 0;">Recent Activity</h3>
+                    <a href="user_orders.html" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.85rem;">
+                        View All Orders & Invoices →
+                    </a>
+                </div>
+                <div id="recent-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <p style="color: var(--text-muted);">No recent activity to show.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.checkAuth('user')) return;
+
+            const user = Auth.getUser();
+            document.getElementById('welcome-msg').textContent = `Welcome, ${user.username}`;
+
+            // Load Real-time Stats
+            const stats = await Api.get('/user/stats');
+            if (stats) {
+                document.getElementById('due-total').textContent = `₹${stats.total_due.toLocaleString()}`;
+                document.getElementById('order-count').textContent = stats.active_orders;
+
+                const list = document.getElementById('recent-list');
+                if (stats.recent_activity && stats.recent_activity.length > 0) {
+                    list.innerHTML = stats.recent_activity.reverse().map(o => `
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.5rem 0; border-bottom: 1px solid var(--glass-border);">
+                            <span>Ordered ${o.product_name}</span>
+                            <span style="color: ${o.paid ? 'var(--success)' : 'var(--warning)'};">
+                                ${o.paid ? 'Paid' : 'Unpaid'} • ₹${o.price}
+                            </span>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            const bnplEl = document.getElementById('bnpl-status');
+            if (user.loan_eligible) {
+                bnplEl.textContent = "ACTIVE";
+                bnplEl.style.color = "var(--success)";
+            } else {
+                bnplEl.textContent = "LOCKED";
+                bnplEl.style.color = "var(--danger)";
+            }
+        });
+    </script>
+
+</body>
+
+</html>

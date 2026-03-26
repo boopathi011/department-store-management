@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | SRI RATHNA STORES</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <nav class="main-nav"></nav>
+
+    <main class="container animate-fade" style="padding-top: 4rem; max-width: 800px;">
+        <div class="glass" style="padding: 4rem;">
+            <h1 style="margin-bottom: 1rem;">Get in Touch</h1>
+            <p style="color: var(--text-muted); margin-bottom: 3rem;">Have questions about your credit or our products?
+                We're here to help.</p>
+
+            <form id="contactForm">
+                <!-- Disable Captcha for simpler experience -->
+                <input type="hidden" name="_captcha" value="false">
+                <div class="form-group">
+                    <input type="text" name="name" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Email Address" required>
+                </div>
+                <div class="form-group">
+                    <textarea class="glass" name="message"
+                        style="width: 100%; padding: 12px; height: 150px; border-radius: 8px; color: white; margin-bottom: 2rem;"
+                        placeholder="Your Message" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Send Message</button>
+            </form>
+
+            <script>
+                document.getElementById('contactForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const form = e.target;
+                    const formData = new FormData(form);
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Sending...';
+
+                    try {
+                        const response = await fetch('https://formsubmit.co/ajax/anbu02537@gmail.com', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(Object.fromEntries(formData))
+                        });
+
+                        if (response.ok) {
+                            UI.showToast('Message sent successfully!', 'success');
+                            form.reset();
+                        } else {
+                            throw new Error('Failed to send message');
+                        }
+                    } catch (error) {
+                        UI.showToast('Failed to send message. Please try again.', 'danger');
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Send Message';
+                    }
+                });
+            </script>
+
+
+            <div
+                style="margin-top: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; border-top: 1px solid var(--glass-border); padding-top: 3rem; text-align: left;">
+                <div>
+                    <h4 style="color: var(--primary);">📍 Location</h4>
+                    <p style="color: var(--text-muted);">Thirupathur Main Road, Ariyakulam,<br>Dharmapuri</p>
+                </div>
+                <div>
+                    <h4 style="color: var(--primary);">📞 Contact</h4>
+                    <p style="color: var(--text-muted);">9787144977<br>anbu02537@gmail.com</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+
+</html>

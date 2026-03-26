@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Dues | SRI RATHNA STORES</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Dashboard</h2>
+            <nav>
+                <a href="user.html">Overview</a>
+                <a href="user_orders.html">My Orders</a>
+                <a href="user_due.html" style="color: var(--primary);">Pending Dues</a>
+                <a href="products.html">Continue Shopping</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="text-align: left; padding: 0; margin-bottom: 3rem;">
+                <h1>Pending Dues</h1>
+                <p style="color: var(--text-muted);">Settle your balances within 4 days to maintain your credit score.
+                </p>
+            </header>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+                <div class="glass animate-fade" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">Outstanding Items</h3>
+                    <div id="due-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Items will be injected here -->
+                        <p style="color: var(--text-muted);">Loading pending payments...</p>
+                    </div>
+                </div>
+
+                <div class="glass animate-fade" style="padding: 2rem; height: fit-content;">
+                    <h3 style="margin-bottom: 1.5rem;">Payment Summary</h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <span style="color: var(--text-muted);">Subtotal</span>
+                        <span id="summary-total">₹0</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                        <span style="color: var(--text-muted);">Interest</span>
+                        <span style="color: var(--success);">₹0 (Grace Period)</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 2rem; font-size: 1.5rem; font-weight: 700;">
+                        <span>Total</span>
+                        <span id="final-total">₹0</span>
+                    </div>
+                    <button id="pay-button" onclick="handlePayment()" class="btn btn-primary" style="width: 100%;">Pay Now</button>
+                    
+                    <div style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.05); text-align: center;">
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Direct UPI Support</p>
+                        <p style="font-weight: 600; font-size: 0.9rem;">kabilanbu567-1@okicici</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            width: 90%;
+            max-width: 400px;
+            padding: 2.5rem;
+            animation: modalSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes modalSlide {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+
+    <div id="mock-payment-modal" class="modal-overlay">
+        <div class="glass modal-content">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 3.5rem; margin-bottom: 1rem;">✨</div>
+                <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Secure Checkout</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Development Mode Simulator</p>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; border: 1px solid var(--glass-border);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-muted);">To:</span>
+                    <span style="font-weight: 600;">SRI RATHNA STORES</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-muted);">Transaction Total:</span>
+                    <span id="mock-amount" style="font-weight: 700; color: var(--success); font-size: 1.1rem;">₹0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">VPA:</span>
+                    <span style="font-weight: 500; font-size: 0.85rem;">kabilanbu567-1@okicici</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="closeMockModal()" class="btn" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);">Cancel</button>
+                <button id="mock-confirm-btn" onclick="simulateSuccess()" class="btn btn-primary" style="flex: 1;">Pay Now</button>
+            </div>
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                This is a simulation. No real money will be deducted.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentTotal = 0;
+        let currentOrderId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.checkAuth('user')) return;
+            await loadDues();
+        });
+
+        async function loadDues() {
+            const dueList = document.getElementById('due-list');
+            const loans = await Api.get('/loans/active');
+
+            if (loans && loans.length > 0) {
+                let total = 0;
+                dueList.innerHTML = loans.map(l => {
+                    total += l.price;
+                    const orderDate = new Date(l.date);
+                    const deadline = l.deadline_days || 4;
+                    const dueDate = new Date(orderDate);
+                    dueDate.setDate(dueDate.getDate() + deadline);
+                    const diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+
+                    return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);">
+                        <div>
+                            <h4 style="margin-bottom: 0.25rem;">${l.product_name}</h4>
+                            <span style="font-size: 0.8rem; color: ${diffDays < 1 ? 'var(--danger)' : 'var(--text-muted)'};">
+                                ${diffDays < 0 ? 'Overdue by ' + Math.abs(diffDays) + ' days' : 'Due in ' + diffDays + ' days'}
+                            </span>
+                        </div>
+                        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                            <span style="font-weight: 600; font-size: 1.2rem;">₹${l.price}</span>
+                            <button onclick='handleDownload(${JSON.stringify(l).replace(/'/g, "\\'")})' class="btn btn-sm" style="font-size: 0.75rem; padding: 4px 12px; height: auto;">Download Invoice</button>
+                        </div>
+                    </div>
+                `}).join('');
+
+                currentTotal = total;
+                document.getElementById('summary-total').textContent = `₹${total}`;
+                document.getElementById('final-total').textContent = `₹${total}`;
+                document.getElementById('pay-button').disabled = false;
+            } else {
+                dueList.innerHTML = `
+                    <div style="text-align: center; padding: 3rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                        <h3>All Clear!</h3>
+                        <p style="color: var(--text-muted);">You have no pending payments at the moment.</p>
+                    </div>
+                `;
+                document.getElementById('summary-total').textContent = "₹0";
+                document.getElementById('final-total').textContent = "₹0";
+                document.getElementById('pay-button').disabled = true;
+            }
+        }
+
+        async function handlePayment() {
+            if (currentTotal <= 0) return;
+
+            const payBtn = document.getElementById('pay-button');
+            payBtn.disabled = true;
+            payBtn.innerText = "Initializing...";
+
+            try {
+                const order = await Api.post('/payments/create-order', { amount: currentTotal });
+                
+                if (!order || !order.id) {
+                    throw new Error("Failed to create payment order");
+                }
+
+                currentOrderId = order.id;
+
+                if (order.key === 'rzp_test_placeholder') {
+                    openMockModal(order.amount / 100);
+                    payBtn.disabled = false;
+                    payBtn.innerText = "Pay Now";
+                    return;
+                }
+
+                const options = {
+                    "key": order.key,
+                    "amount": order.amount,
+                    "currency": "INR",
+                    "name": "SRI RATHNA STORES",
+                    "description": "Settle Pending Dues",
+                    "image": "https://placehold.co/200x200?text=SRS",
+                    "order_id": order.id,
+                    "handler": async function (response) {
+                        await verifyPayment(response);
+                    },
+                    "prefill": {
+                        "name": localStorage.getItem('srs_username'),
+                        "contact": "9787144977",
+                        "method": "upi",
+                        "vpa": "kabilanbu567-1@okicici"
+                    },
+                    "theme": { "color": "#6366f1" },
+                    "modal": {
+                        "ondismiss": function() {
+                            payBtn.disabled = false;
+                            payBtn.innerText = "Pay Now";
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (error) {
+                console.error(error);
+                UI.showToast("Payment initiation failed.", "error");
+                payBtn.disabled = false;
+                payBtn.innerText = "Pay Now";
+            }
+        }
+
+        function openMockModal(amount) {
+            document.getElementById('mock-amount').textContent = `₹${amount}`;
+            document.getElementById('mock-payment-modal').style.display = 'flex';
+        }
+
+        function closeMockModal() {
+            document.getElementById('mock-payment-modal').style.display = 'none';
+        }
+
+        async function simulateSuccess() {
+            const btn = document.getElementById('mock-confirm-btn');
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            
+            setTimeout(async () => {
+                await verifyPayment({
+                    razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substr(2, 9),
+                    razorpay_order_id: currentOrderId,
+                    razorpay_signature: "mock_signature"
+                });
+                closeMockModal();
+                btn.disabled = false;
+                btn.innerText = "Pay Now";
+            }, 1500);
+        }
+
+        async function verifyPayment(response) {
+            UI.showToast("Payment Successful! Verifying...", "success");
+            
+            const verification = await Api.post('/payments/verify', {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+            });
+
+            if (verification && verification.status === 'ok') {
+                UI.showToast("Dues cleared successfully!", "success");
+                await loadDues();
+            } else {
+                UI.showToast("Verification failed. Please contact support.", "error");
+            }
+        }
+
+        function handleDownload(loan) {
+            UI.generateReceipt(loan.date, [loan], true);
+        }
+        
+        function downloadAllDues() {
+            Api.get('/loans/active').then(loans => {
+                if (loans && loans.length > 0) {
+                    UI.generateReceipt(new Date().toISOString().split('T')[0], loans, true);
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products | Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 3rem; color: var(--primary);">Smart Admin</h2>
+            <nav>
+                <a href="admin.html">Stats Overview</a>
+                <a href="admin_products.html" style="color: var(--primary);">Manage Products</a>
+                <a href="admin_orders.html">Store Orders</a>
+                <a href="admin_loans.html">Loan Tracker</a>
+                <a href="admin_customers.html">Customer Analytics</a>
+                <a href="admin_reports.html">Financial Reports</a>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); width: 100%; margin: 1rem 0;">
+                <a href="#" onclick="Auth.logout()">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+                <div>
+                    <h1>Product Inventory</h1>
+                    <p style="color: var(--text-muted);">Manage your catalog of 30+ premium items.</p>
+                </div>
+                <button class="btn btn-primary" onclick="toggleModal(true)">+ Add New Product</button>
+            </header>
+
+            <!-- Add Product Modal -->
+            <div id="product-modal"
+                style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+                <div class="glass animate-fade"
+                    style="padding: 2.5rem; width: 100%; max-width: 450px; border: 1px solid var(--glass-border);">
+                    <h2 id="modal-title" style="margin-bottom: 2rem; color: var(--primary);">Add New Inventory Item</h2>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Product
+                            Name</label>
+                        <input type="text" id="new-p-name" placeholder="e.g. Organic Avocados" class="glass"
+                            style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Price
+                            (INR)</label>
+                        <input type="number" id="new-p-price" placeholder="450" class="glass"
+                            style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Category</label>
+                        <input type="text" id="new-p-cat" placeholder="Groceries / Electronics" class="glass"
+                            style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 2rem;">
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Product
+                            Image (PNG/JPG)</label>
+                        <input type="file" id="new-p-img" accept="image/*" class="glass"
+                            style="width: 100%; padding: 0.8rem; border: 1px solid var(--glass-border); color: white;">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="submit-btn" class="btn btn-primary" style="flex: 2;" onclick="submitProduct()">Add
+                            to
+                            Catalog</button>
+                        <button class="btn btn-outline" style="flex: 1;" onclick="toggleModal(false)">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass" style="padding: 1rem; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 1.5rem;">Preview</th>
+                            <th style="padding: 1.5rem;">Name</th>
+                            <th style="padding: 1.5rem;">Price</th>
+                            <th style="padding: 1.5rem;">Category</th>
+                            <th style="padding: 1.5rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-rows">
+                        <!-- Products will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let editingProductId = null;
+
+        function toggleModal(show, product = null) {
+            const modal = document.getElementById('product-modal');
+            const title = document.getElementById('modal-title');
+            const btn = document.getElementById('submit-btn');
+
+            modal.style.display = show ? 'flex' : 'none';
+            editingProductId = product ? product.id : null;
+
+            if (product) {
+                title.textContent = "Update Product Details";
+                btn.textContent = "Save Changes";
+                document.getElementById('new-p-name').value = product.name;
+                document.getElementById('new-p-price').value = product.price;
+                document.getElementById('new-p-cat').value = product.category;
+            } else {
+                title.textContent = "Add New Inventory Item";
+                btn.textContent = "Add to Catalog";
+                document.getElementById('new-p-name').value = '';
+                document.getElementById('new-p-price').value = '';
+                document.getElementById('new-p-cat').value = '';
+                document.getElementById('new-p-img').value = '';
+            }
+        }
+
+        async function submitProduct() {
+            const name = document.getElementById('new-p-name').value;
+            const price = document.getElementById('new-p-price').value;
+            const category = document.getElementById('new-p-cat').value;
+            const imageFile = document.getElementById('new-p-img').files[0];
+
+            if (!name || !price || !category) {
+                UI.showToast("Please fill required fields", "warning");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('price', price);
+            formData.append('category', category);
+            if (imageFile) formData.append('image', imageFile);
+
+            const url = editingProductId ? `/update_product/${editingProductId}` : '/add_product';
+            const res = await Api.post(url, formData);
+
+            if (res && res.status === "ok") {
+                UI.showToast(editingProductId ? "Product updated!" : "Product added successfully!");
+                toggleModal(false);
+                loadInventory();
+            } else {
+                UI.showToast(res?.message || "Action failed", "danger");
+            }
+        }
+
+        async function loadInventory() {
+            if (!Auth.checkAuth('admin')) return;
+
+            const products = await Api.get('/products');
+            const rows = document.getElementById('inventory-rows');
+
+            if (products) {
+                rows.innerHTML = products.map(p => `
+                <tr style="border-bottom: 1px solid var(--glass-border);">
+                    <td style="padding: 1.5rem;">
+                        <img src="${p.image}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" onerror="this.src='https://placehold.co/50x50?text=📦'">
+                    </td>
+                    <td style="padding: 1.5rem;">${p.name}</td>
+                    <td style="padding: 1.5rem;">₹${p.price}</td>
+                    <td style="padding: 1.5rem;">${p.category}</td>
+                    <td style="padding: 1.5rem; display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.8rem;" onclick='toggleModal(true, ${JSON.stringify(p).replace(/'/g, "&apos;")})'>Edit</button>
+                        <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.8rem; background: var(--danger);">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadInventory);
+    </script>
+
+</body>
+
+</html>

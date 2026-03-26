@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | SRI RATHNA STORES</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <nav class="main-nav"></nav>
+
+    <main class="container" style="padding-top: 4rem;">
+        <div id="product-content" class="glass animate-fade"
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; padding: 4rem;">
+            <div class="glass animate-fade"
+                style="padding: 1rem; flex: 1; height: 400px; overflow: hidden; border-radius: 12px;">
+                <img id="p-image" src="" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+                <h1 id="p-name" style="font-size: 3rem; margin-bottom: 1rem;">Loading...</h1>
+                <button id="order-btn" class="btn btn-primary pulse-animation"
+                    style="padding: 18px 40px; font-size: 1.2rem; margin-top: 1rem;">
+                    🛒 Get Now (BNPL)
+                </button>
+                <p id="p-desc" style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem;">
+                    Detailed description of the product including quality specs, origin, and more.
+                    This item is covered under our "Buy Now Pay Later" trust policy.
+                </p>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem;">
+                    ₹<span id="p-price">0</span>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="buyCurrentProduct()" class="btn btn-primary"
+                        style="flex: 1; padding: 1.5rem;">Order on Credit</button>
+                    <button class="btn btn-outline" style="flex: 1;">Add to Wishlist</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentId = new URLSearchParams(window.location.search).get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!currentId) {
+                location.href = 'products.html';
+                return;
+            }
+
+            // Mocking detail fetch as backend might only have /products
+            const products = await Api.get('/products');
+            const p = products.find(x => x.id == currentId);
+
+            if (p) {
+                document.getElementById('p-name').textContent = p.name;
+                document.getElementById('p-price').textContent = `₹${p.price}`;
+                document.getElementById('p-image').src = p.image || 'https://placehold.co/400x400?text=📦';
+                document.getElementById('p-image').alt = p.name;
+                document.title = `${p.name} | SRI RATHNA STORES`;
+            }
+        });
+
+        async function buyCurrentProduct() {
+            const user = Auth.getUser();
+            if (!user) {
+                UI.showToast("Please login to order", "warning");
+                setTimeout(() => location.href = 'login.html', 1500);
+                return;
+            }
+
+            const res = await Api.post('/order', { user: user.username, product: currentId });
+            if (res) {
+                UI.showToast("Ordered! Check your dashboard for payment timeline.", "success");
+            }
+        }
+    </script>
+
+</body>
+
+</html>
