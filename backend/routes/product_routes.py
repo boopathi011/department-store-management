@@ -6,7 +6,8 @@ product_bp = Blueprint('products', __name__)
 
 @product_bp.route('/products', methods=['GET'])
 def get_products():
-    return jsonify(ProductController.get_all()), 200
+    result, status = ProductController.get_all()
+    return jsonify(result), status
 
 @product_bp.route('/add_product', methods=['POST'])
 @token_required

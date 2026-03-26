@@ -14,9 +14,11 @@ def create_order(current_user, role):
 @order_bp.route('/user/orders', methods=['GET'])
 @token_required
 def get_user_orders(current_user, role):
-    return jsonify(OrderController.get_user_orders(current_user)), 200
+    result, status = OrderController.get_user_orders(current_user)
+    return jsonify(result), status
 
 @order_bp.route('/user/stats', methods=['GET'])
 @token_required
 def get_user_stats(current_user, role):
-    return jsonify(OrderController.get_user_stats(current_user)), 200
+    result, status = OrderController.get_user_stats(current_user)
+    return jsonify(result), status
