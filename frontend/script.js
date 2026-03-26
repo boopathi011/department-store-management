@@ -207,7 +207,7 @@ const Api = {
             const user = Auth.getUser();
             const headers = user ? { "Authorization": `Bearer ${user.token}` } : {};
             const r = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
-            if (r.status === 401) Auth.logout();
+            if (r.status === 401 && endpoint !== '/login') Auth.logout();
             return await r.json();
         } catch (e) {
             UI.showToast("Connection Error", "danger");
@@ -225,7 +225,7 @@ const Api = {
                 headers: headers,
                 body: isFormData ? data : JSON.stringify(data)
             });
-            if (r.status === 401) Auth.logout();
+            if (r.status === 401 && endpoint !== '/login') Auth.logout();
             return await r.json();
         } catch (e) {
             UI.showToast("Request Failed", "danger");
