@@ -22,11 +22,16 @@ class ProductController:
         image_url = data.get('image', 'https://placehold.co/400x300?text=📦')
         
         if file:
-            import werkzeug.utils
-            filename = werkzeug.utils.secure_filename(f"product_{new_id}_{file.filename}")
-            filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
-            file.save(filepath)
-            image_url = f"/uploads/{filename}"
+            try:
+                import werkzeug.utils
+                filename = werkzeug.utils.secure_filename(f"product_{new_id}_{file.filename}")
+                filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
+                file.save(filepath)
+                image_url = f"/uploads/{filename}"
+            except Exception as e:
+                print(f"Upload failed: {str(e)}. Defaulting to URL.")
+                # On Vercel, this might fail, so we fallback to the URL if provided
+                image_url = data.get('image', 'https://placehold.co/400x300?text=📦')
 
         new_product = {
             "id": new_id,

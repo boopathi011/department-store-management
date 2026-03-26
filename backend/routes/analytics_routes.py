@@ -23,7 +23,11 @@ def product_analytics(current_user, role):
     else: # monthly
         start_date = today.replace(day=1)
         
-    filtered_orders = [o for o in orders if datetime.date.fromisoformat(o['date']) >= start_date]
+    try:
+        filtered_orders = [o for o in orders if datetime.date.fromisoformat(o['date']) >= start_date]
+    except Exception:
+        # Fallback if date is not in perfect ISO format
+        filtered_orders = [o for o in orders if o.get('date', '').split('T')[0] >= start_date.isoformat()]
     
     # Calculate sales frequencies
     sales_count = {}
